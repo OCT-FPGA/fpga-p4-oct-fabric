@@ -30,21 +30,11 @@ clusters = [
     ('urn:publicid:IDN+cloudlab.umass.edu+authority+cm', 'Mass')]
 
 # Pick your image.
-imageList = [
-    ('urn:publicid:IDN+emulab.net+image+emulab-ops//UBUNTU20-64-STD', 'UBUNTU 20.04'),
-    ('urn:publicid:IDN+emulab.net+image+emulab-ops//UBUNTU18-64-STD', 'UBUNTU 18.04'),
-    ('urn:publicid:IDN+emulab.net+image+emulab-ops//UBUNTU16-64-STD', 'UBUNTU 16.04'),
-    #('urn:publicid:IDN+emulab.net+image+emulab-ops//CENTOS8-64-STD', 'CENTOS 8.4'),
-    ('urn:publicid:IDN+emulab.net+image+emulab-ops//CENTOS7-64-STD', 'CENTOS 7.9')]
+imageList = [('urn:publicid:IDN+emulab.net+image+emulab-ops//UBUNTU20-64-STD', 'UBUNTU 20.04'),
+             ('urn:publicid:IDN+emulab.net+image+emulab-ops//UBUNTU22-64-STD', 'UBUNTU 22.04')] 
 
 # Pick the appropriate tool version
-toolVersion = [#('2022.1'),
-               ('2021.1'),
-               ('2020.2.1'),
-               ('2020.2'),
-               ('2020.1.1'),
-               ('2020.1'),
-               ('Do not install tools')]
+toolVersion = ['2023.1', '2023.2'] 
                    
 pc.defineParameter("nodes","List of nodes",
                    portal.ParameterType.STRING,"",
@@ -134,12 +124,12 @@ nodeList = params.nodes.split(',')
 i = 0
 for name in nodeList:
     # Create a node and add it to the request
-    # name = "node" + str(i)
     node = request.RawPC(name)
-    node.disk_image = params.osImage
-    # Assign to the node hosting the FPGA.
-    node.hardware_type = "fpga-alveo"
+    # UMass cluster
     node.component_manager_id = "urn:publicid:IDN+cloudlab.umass.edu+authority+cm"
+    # Assign to the node hosting the FPGA.
+    node.component_id = name
+    node.disk_image = params.osImage
     
     # Optional Blockstore
     if params.tempFileSystemSize > 0 or params.tempFileSystemMax:
@@ -151,12 +141,9 @@ for name in nodeList:
             pass
         bs.placement = "any"
         pass
-    
-    if params.toolVersion != "Do not install tools":
-        node.addService(pg.Execute(shell="bash", command="sudo /local/repository/post-boot.sh " + params.toolVersion + " >> /local/repository/output_log.txt"))
-        pass
-    pass
-    
+
+    node.addService(pg.Execute(shell="bash", command="sudo /local/repository/post-boot.sh " + params.toolVersion + " >> /local/repository/output_log.txt"))
+
     # Since we want to create network links to the FPGA, it has its own identity.
     fpga = request.RawPC("fpga-" + name)
     # UMass cluster
@@ -168,6 +155,8 @@ for name in nodeList:
     
     # Secret sauce.
     fpga.SubNodeOf(node)
+
+    # FPGA interfaces
     iface1 = fpga.addInterface("if0")
     # iface2 = fpga.addInterface("if1")
     # Must specify the IPv4 address on all stitched links
@@ -175,7 +164,12 @@ for name in nodeList:
     # iface2.addAddress(pg.IPv4Address(str(next(addrs)), str(subnet.netmask)))
     interfaces.append(iface1)
     # interfaces.append(iface2)
-    
+
+    # Host interfaces
+    iface3 = node.addInterface("if2")
+    iface3.addAddress(pg.IPv4Address(str(next(addrs)), str(subnet.netmask)))
+    interfaces.append(iface3
+                     )
 ###################################################
 # The part below is from Ezra's "stiching" script!
 
