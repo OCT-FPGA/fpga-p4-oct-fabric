@@ -91,9 +91,9 @@ if params.node_count < NODE_MIN or params.node_count > NODE_MAX:
     portal.context.reportError( portal.ParameterError( "Node count must be between {} and {} inclusive".format(NODE_MIN, NODE_MAX) ) )
     pass
 
-if params.osImage == "urn:publicid:IDN+emulab.net+image+emulab-ops//CENTOS8-64-STD" and params.toolVersion == "2020.1":
-    pc.reportError(portal.ParameterError("OS and tool version mismatch.", ["osImage"]))
-    pass
+#if params.osImage == "urn:publicid:IDN+emulab.net+image+emulab-ops//CENTOS8-64-STD" and params.toolVersion == "2020.1":
+#    pc.reportError(portal.ParameterError("OS and tool version mismatch.", ["osImage"]))
+#    pass
     
 if params.vlan < VLAN_MIN or params.vlan > VLAN_MAX:
     portal.context.reportError( portal.ParameterError( "VLAN ID must be in the range {}-{}".format(VLAN_MIN, VLAN_MAX) ) )
